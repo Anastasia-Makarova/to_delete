@@ -22,7 +22,7 @@ async def get_contacts(db: Session = Depends(get_db)):
     return contacts
 
 
-@app.get('/contacts/{contact_id}', response_model=ContactResponse)
+@app.get('/contacts/{contact_id}', response_model=ContactResponse, tags=['search_by_parameter'])
 async def get_contact_by_id(contact_id: int = Path(ge=1), db: Session = Depends(get_db)):
     contact = db.query(Contact).filter_by(id=contact_id).first()
     if contact is None:
