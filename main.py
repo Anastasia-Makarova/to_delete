@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Path
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,14 @@ async def get_contacts(db: Session = Depends(get_db)):
     return contacts
 
 
+@app.get('/contacts/{contact_id}', response_model=ContactResponse)
+async def get_contact_by_id(contact_id: int = Path(ge=1), db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter_by(id=contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Not Found')
+    return contact
+
+
 @app.post('/contacts', response_model=ContactResponse)
 async def create_contact(body: ContactSchema, db: Session = Depends(get_db)):
     contact = db.query(Contact).filter_by(email=body.email).first()
@@ -37,10 +45,35 @@ async def create_contact(body: ContactSchema, db: Session = Depends(get_db)):
         )
     db.add(contact)
     db.commit()
-    # db.refresh()
     return contact
 
 
+@app.put('/contacts/{contact_id}', response_model=ContactResponse)
+async def update_contact(body: ContactSchema, contact_id: int = Path(ge=1), db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter_by(id=contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Not Found')
+    
+    contact.name=body.name, 
+    contact.surname=body.surname, 
+    contact.phone_number=body.phone_number, 
+    contact.email=body.email,
+    contact.birthday=body.birthday,
+    contact.notes=body.notes
+      
+    db.commit()
+    return contact
+
+
+@app.delete('/contacts/{contact_id}', response_model=ContactResponse)
+async def delete_contact(contact_id: int = Path(ge=1), db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter_by(id=contact_id).first()
+    if contact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Not Found')
+    
+    db.delete(contact)    
+    db.commit()
+    return contact
 
 @app.get("/api/healthchecker")
 def healthchecker(db: Session = Depends(get_db)):
